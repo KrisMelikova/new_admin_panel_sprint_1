@@ -23,8 +23,8 @@ CREATE TABLE IF NOT EXISTS content.genre_film_work (
     id uuid PRIMARY KEY,
     genre_id uuid NOT NULL,
     film_work_id uuid NOT NULL,
-    reated timestamp with time zone,
-    FOREIGN KEY (genre_id) REFERENCES content.genre (id) ON DELETE SET NULL,
+    created timestamp with time zone,
+    FOREIGN KEY (genre_id) REFERENCES content.genre (id) ON DELETE CASCADE,
     FOREIGN KEY (film_work_id) REFERENCES content.film_work (id) ON DELETE CASCADE
 );
 
@@ -41,7 +41,7 @@ CREATE TABLE IF NOT EXISTS content.person_film_work (
     film_work_id uuid NOT NULL,
     role TEXT NOT NULL,
     created timestamp with time zone,
-    FOREIGN KEY (person_id) REFERENCES content.person (id) ON DELETE SET NULL,
+    FOREIGN KEY (person_id) REFERENCES content.person (id) ON DELETE CASCADE,
     FOREIGN KEY (film_work_id) REFERENCES content.film_work (id) ON DELETE CASCADE
 );
 
