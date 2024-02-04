@@ -1,4 +1,4 @@
-from django.core.validators import MinValueValidator, MaxValueValidator
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
@@ -9,13 +9,13 @@ class Genre(TimeStampedMixin, UUIDMixin):
     name = models.CharField(_('name'), max_length=255)
     description = models.TextField(_('description'), blank=True)
 
-    def __str__(self):
-        return self.name
-
     class Meta:
         db_table = "content\".\"genre"
         verbose_name = 'Жанр'
         verbose_name_plural = 'Жанры'
+
+    def __str__(self):
+        return self.name
 
 
 class GenreFilmwork(UUIDMixin):
@@ -30,13 +30,13 @@ class GenreFilmwork(UUIDMixin):
 class Person(TimeStampedMixin, UUIDMixin):
     full_name = models.TextField(_('full name'))
 
-    def __str__(self):
-        return self.full_name
-
     class Meta:
         db_table = "content\".\"person"
         verbose_name = 'Персона'
         verbose_name_plural = 'Персоны'
+
+    def __str__(self):
+        return self.full_name
 
 
 class PersonFilmwork(UUIDMixin):
@@ -62,10 +62,10 @@ class Filmwork(TimeStampedMixin, UUIDMixin):
     genres = models.ManyToManyField(Genre, through='GenreFilmwork')
     persons = models.ManyToManyField(Person, through='PersonFilmwork')
 
-    def __str__(self):
-        return self.title
-
     class Meta:
         db_table = "content\".\"film_work"
         verbose_name = 'Кинопроизведение'
         verbose_name_plural = 'Кинопроизведения'
+
+    def __str__(self):
+        return self.title
