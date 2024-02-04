@@ -3,9 +3,10 @@ ignore = A003, VNE003, CCE001, Q000
 max-line-length = 120
 max-complexity = 10
 exclude =
-    ./config/components/
+    ./movies_admin/config/components/*
     .env
     manage.py
     migrations
+    ./sqlite_to_postgres/*
     settings.py
     venv
