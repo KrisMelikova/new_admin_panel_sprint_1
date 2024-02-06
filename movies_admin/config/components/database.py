@@ -10,9 +10,9 @@ DATABASES = {
         'PORT': os.environ.get('DB_PORT', 5432),
         'OPTIONS': {
             # схемы, с которыми будет работать приложение.
-            'options': '-c search_path=public,content'
-        }
-    }
+            'options': '-c search_path=public,content',
+        },
+    },
 }
 
 # Default primary key field type
