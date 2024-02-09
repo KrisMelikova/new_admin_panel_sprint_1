@@ -3,12 +3,11 @@ import sqlite3
 from dataclasses import astuple, fields
 
 import psycopg2
-from dataclasses_sqlite_to_pg import (Genre, GenreMovie, Movie, Person,
-                                      PersonMovie)
 from dotenv import load_dotenv
 from psycopg2.extensions import connection as pg_connection
 from psycopg2.extras import DictCursor
 
+from dataclasses_sqlite_to_pg import Genre, GenreMovie, Movie, Person, PersonMovie
 from sqlite_to_postgres.utils import sqlite_conn_context, sqlite_curs_context
 
 load_dotenv()
@@ -39,10 +38,15 @@ def load_data_from_sqlite(sqlite_conn: sqlite3.Connection, dt, query):
         except sqlite3.Error as sqlite_err:
             raise f"SQLite error while SELECT: {sqlite_err}"
 
-        data = sqlite_cursor.fetchall()
-        dt_data = [dt(*element) for element in data]
+        prepared_dt_data = []
+        while True:
+            data = sqlite_cursor.fetchmany(100)
+            if not data:
+                break
+            dt_data = [dt(*element) for element in data]
+            prepared_dt_data.extend(dt_data)
 
-        return dt_data
+        return prepared_dt_data
 
 
 def load_to_postgres(data_from_sqlite, pg_conn, dt):
@@ -57,11 +61,6 @@ def load_to_postgres(data_from_sqlite, pg_conn, dt):
             pg_cursor.mogrify(f"({col_count})", astuple(item)).decode("utf-8") for item in data_from_sqlite)
 
         table_name = dataclass_tables_mapping[dt]
-
-        try:
-            pg_cursor.execute("""TRUNCATE %s CASCADE""" % table_name)
-        except psycopg2.Error as pg_err:
-            raise f"PostgreSQL error while TRUNCATE: {pg_err}"
 
         query = f"INSERT INTO {table_name} ({column_names_str}) VALUES {bind_values} ON CONFLICT (id) DO NOTHING"
 
@@ -94,3 +93,5 @@ if __name__ == "__main__":
     with (sqlite_conn_context(SQLITE_DB_PATH) as sqlite_conn,
           psycopg2.connect(**PG_DSL, cursor_factory=DictCursor) as pg_conn):
         load_data_from_sqlite_to_postgres(sqlite_conn, pg_conn)
+
+    pg_conn.close()
