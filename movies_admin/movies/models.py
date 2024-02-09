@@ -1,6 +1,7 @@
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+
 from movies.mixins import TimeStampedMixin, UUIDMixin
 
 
@@ -24,6 +25,7 @@ class GenreFilmwork(UUIDMixin):
 
     class Meta:
         db_table = "content\".\"genre_film_work"
+        unique_together = ['film_work', 'genre']
 
 
 class Person(TimeStampedMixin, UUIDMixin):
@@ -46,6 +48,7 @@ class PersonFilmwork(UUIDMixin):
 
     class Meta:
         db_table = "content\".\"person_film_work"
+        unique_together = ['film_work', 'person', 'role']
 
 
 class Filmwork(TimeStampedMixin, UUIDMixin):
