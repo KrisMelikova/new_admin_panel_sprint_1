@@ -90,8 +90,11 @@ if __name__ == "__main__":
 
     SQLITE_DB_PATH = os.environ.get("SQLITE_DB_PATH")
 
-    with (sqlite_conn_context(SQLITE_DB_PATH) as sqlite_conn,
-          psycopg2.connect(**PG_DSL, cursor_factory=DictCursor) as pg_conn):
-        load_data_from_sqlite_to_postgres(sqlite_conn, pg_conn)
-
-    pg_conn.close()
+    try:
+        with (sqlite_conn_context(SQLITE_DB_PATH) as sqlite_conn,
+              psycopg2.connect(**PG_DSL, cursor_factory=DictCursor) as pg_conn):
+            load_data_from_sqlite_to_postgres(sqlite_conn, pg_conn)
+    except Exception as exc:
+        raise f"Exception while loading data from sqlite to postgres: {exc}"
+    finally:
+        pg_conn.close()
