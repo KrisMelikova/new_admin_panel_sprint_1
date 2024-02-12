@@ -1,3 +1,4 @@
+import dataclasses
 import os
 import sqlite3
 from dataclasses import astuple, fields
@@ -12,15 +13,15 @@ from sqlite_to_postgres.utils import sqlite_conn_context, sqlite_curs_context
 
 load_dotenv()
 
-dataclass_query_mapping = {
-    Movie: "SELECT title, description, creation_date, type, created_at, updated_at, id, rating FROM film_work;",
-    Genre: "SELECT name, description, created_at, updated_at, id from genre;",
-    GenreMovie: "SELECT film_work_id, genre_id, created_at, id from genre_film_work;",
-    Person: "SELECT full_name, created_at, updated_at, id from person;",
-    PersonMovie: "SELECT film_work_id, person_id, role, created_at, id from person_film_work;",
+dataclass_sqlite_tables_mapping = {
+    Movie: "film_work",
+    Genre: "genre",
+    GenreMovie: "genre_film_work",
+    Person: "person",
+    PersonMovie: "person_film_work",
 }
 
-dataclass_tables_mapping = {
+dataclass_pg_tables_mapping = {
     Movie: "content.film_work",
     Genre: "content.genre",
     GenreMovie: "content.genre_film_work",
@@ -29,40 +30,52 @@ dataclass_tables_mapping = {
 }
 
 
-def load_data_from_sqlite(sqlite_conn: sqlite3.Connection, dt, query):
+def load_data_from_sqlite(sqlite_conn: sqlite3.Connection, dt: dataclasses, table: str):
     """ Загрузка данных из SQLite. """
 
     with sqlite_curs_context(sqlite_conn) as sqlite_cursor:
         try:
+            fields_names: list = [field.name for field in fields(dt)]
+            fields_names_prepared: str = ", ".join(fields_names)
+
+            query: str = f"SELECT {fields_names_prepared} FROM {table}"
+
             sqlite_cursor.execute(query)
         except sqlite3.Error as sqlite_err:
             raise f"SQLite error while SELECT: {sqlite_err}"
 
         prepared_dt_data = []
         while True:
-            data = sqlite_cursor.fetchmany(100)
+            data: list | None = sqlite_cursor.fetchmany(100)
             if not data:
                 break
-            dt_data = [dt(*element) for element in data]
+            dt_data: list = [dt(*element) for element in data]
             prepared_dt_data.extend(dt_data)
 
         return prepared_dt_data
 
 
-def load_to_postgres(data_from_sqlite, pg_conn, dt):
+def load_to_postgres(data_from_sqlite, pg_conn, dt: dataclasses):
     """ Загрузка данных в Postgres. """
 
-    column_names = [field.name for field in fields(data_from_sqlite[0])]
-    column_names_str = ",".join(column_names)
-    col_count = ", ".join(["%s"] * len(column_names))
+    column_names: list = [field.name for field in fields(data_from_sqlite[0])]
+    column_names_prepared: str = ", ".join(column_names)
+    col_count: str = ", ".join(["%s"] * len(column_names))
 
     with pg_conn.cursor() as pg_cursor:
-        bind_values = ",".join(
+        bind_values: str = ",".join(
             pg_cursor.mogrify(f"({col_count})", astuple(item)).decode("utf-8") for item in data_from_sqlite)
 
-        table_name = dataclass_tables_mapping[dt]
+        table_name: str = dataclass_pg_tables_mapping[dt]
 
-        query = f"INSERT INTO {table_name} ({column_names_str}) VALUES {bind_values} ON CONFLICT (id) DO NOTHING"
+        column_names_for_pg: str = column_names_prepared.replace(
+            "created_at", "created",
+        ).replace(
+            "updated_at", "modified",
+        )
+
+        query: str = (f"INSERT INTO {table_name} ({column_names_for_pg}) VALUES {bind_values} ON CONFLICT (id) DO "
+                      f"NOTHING")
 
         try:
             pg_cursor.execute(query)
@@ -73,8 +86,9 @@ def load_to_postgres(data_from_sqlite, pg_conn, dt):
 def load_data_from_sqlite_to_postgres(sqlite_conn: sqlite3.Connection, pg_conn: pg_connection):
     """ Основной метод загрузки данных из SQLite в Postgres. """
 
-    for dt, query in dataclass_query_mapping.items():
-        data_from_sqlite = load_data_from_sqlite(sqlite_conn, dt, query)
+    for dt, sqlite_table in dataclass_sqlite_tables_mapping.items():
+
+        data_from_sqlite = load_data_from_sqlite(sqlite_conn, dt, sqlite_table)
 
         load_to_postgres(data_from_sqlite, pg_conn, dt)
 

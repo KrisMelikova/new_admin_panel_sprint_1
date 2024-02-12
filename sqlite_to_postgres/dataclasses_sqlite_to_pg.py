@@ -9,8 +9,8 @@ class Movie:
     description: str
     creation_date: datetime.datetime
     type: str
-    created: datetime.datetime
-    modified: datetime.datetime
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
     id: uuid.UUID = field(default_factory=uuid.uuid4)
     rating: float = field(default=0.0)
 
@@ -19,8 +19,8 @@ class Movie:
 class Genre:
     name: str
     description: str
-    created: datetime.datetime
-    modified: datetime.datetime
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
     id: uuid.UUID = field(default_factory=uuid.uuid4)
 
 
@@ -28,15 +28,15 @@ class Genre:
 class GenreMovie:
     film_work_id: str
     genre_id: str
-    created: datetime.datetime
+    created_at: datetime.datetime
     id: uuid.UUID = field(default_factory=uuid.uuid4)
 
 
 @dataclass
 class Person:
     full_name: str
-    created: datetime.datetime
-    modified: datetime.datetime
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
     id: uuid.UUID = field(default_factory=uuid.uuid4)
 
 
@@ -45,5 +45,5 @@ class PersonMovie:
     film_work_id: str
     person_id: str
     role: str
-    created: datetime.datetime
+    created_at: datetime.datetime
     id: uuid.UUID = field(default_factory=uuid.uuid4)
